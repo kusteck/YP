@@ -1,0 +1,28 @@
+body {
+  margin: 0;
+  padding: 20px;
+  font-family: sans-serif;
+}
+
+body.light {
+  background: #fff;
+  color: #000;
+}
+
+body.dark {
+  background: #222;
+  color: #eee;
+}
+
+button {
+  margin-right: 4px;
+  cursor: pointer;
+}
+
+table {
+  font-size: 14px;
+}
+
+input, select {
+  padding: 4px;
+}
