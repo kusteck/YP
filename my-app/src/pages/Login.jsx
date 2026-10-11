@@ -37,35 +37,23 @@ export default function Login() {
 
   return (
     <form onSubmit={handleSubmit} style={{ maxWidth: "300px" }}>
-      <h2>Вход в магазин техники</h2>
+      <h2>Вход</h2>
       <div style={{ marginBottom: "10px" }}>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
+        <input type="email" placeholder="Email" value={email}
           onChange={(e) => setEmail(e.target.value)}
-          style={{ width: "100%", padding: "6px" }}
-        />
+          style={{ width: "100%", padding: "6px" }} />
         {errors.email && <p style={{ color: "red", margin: "4px 0" }}>{errors.email}</p>}
       </div>
       <div style={{ marginBottom: "10px" }}>
-        <input
-          type="password"
-          placeholder="Пароль"
-          value={password}
+        <input type="password" placeholder="Пароль" value={password}
           onChange={(e) => setPassword(e.target.value)}
-          style={{ width: "100%", padding: "6px" }}
-        />
+          style={{ width: "100%", padding: "6px" }} />
         {errors.password && <p style={{ color: "red", margin: "4px 0" }}>{errors.password}</p>}
       </div>
       {errors.form && <p style={{ color: "red" }}>{errors.form}</p>}
-      <button type="submit" disabled={loading}>
-        {loading ? "Вход..." : "Войти"}
-      </button>
-
-      <p style={{ marginTop: "10px" }}>
-        Нет аккаунта? <Link to="/register">Зарегистрироваться</Link>
-      </p>
+      <button type="submit" disabled={loading}>{loading ? "Вход..." : "Войти"}</button>
+      <p style={{ marginTop: "10px" }}><Link to="/forgot-password">Забыли пароль?</Link></p>
+      <p>Нет аккаунта? <Link to="/register">Зарегистрироваться</Link></p>
     </form>
   );
 }
