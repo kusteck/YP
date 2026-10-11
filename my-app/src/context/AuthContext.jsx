@@ -9,10 +9,16 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!token) { setLoading(false); return; }
+    if (!token) {
+      setLoading(false);
+      return;
+    }
     getMe()
       .then((d) => setUser(d.user))
-      .catch(() => { localStorage.removeItem("token"); setToken(null); })
+      .catch(() => {
+        localStorage.removeItem("token");
+        setToken(null);
+      })
       .finally(() => setLoading(false));
   }, [token]);
 
