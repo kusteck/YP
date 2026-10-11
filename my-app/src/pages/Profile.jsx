@@ -9,8 +9,9 @@ export default function Profile() {
   const { data: orders, loading: oL, error: oE } = useApi(getMyOrders);
 
   const [form, setForm] = useState({
+    full_name: "",
     email: "",
-    name: "",
+    phone: "",
     address: "",
     password: "",
   });
@@ -20,8 +21,9 @@ export default function Profile() {
   useEffect(() => {
     if (user) {
       setForm({
+        full_name: user.full_name || "",
         email: user.email || "",
-        name: user.name || "",
+        phone: user.phone || "",
         address: user.address || "",
         password: "",
       });
@@ -34,8 +36,9 @@ export default function Profile() {
     setMsg("");
     try {
       const payload = {
+        full_name: form.full_name,
         email: form.email,
-        name: form.name,
+        phone: form.phone,
         address: form.address,
       };
       if (form.password) payload.password = form.password;
@@ -54,31 +57,37 @@ export default function Profile() {
 
   return (
     <div>
-      <h1>Профиль</h1>
+      <h1>Личный кабинет</h1>
 
       <section style={{ marginBottom: "30px", maxWidth: "400px" }}>
-        <h2>Данные аккаунта</h2>
+        <h2>Личные данные</h2>
         <form onSubmit={handleSave}>
           <div style={{ marginBottom: "8px" }}>
-            <label>Email (логин)</label>
+            <label>ФИО</label>
+            <input value={form.full_name}
+              onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+              style={{ width: "100%", padding: "6px" }} />
+          </div>
+          <div style={{ marginBottom: "8px" }}>
+            <label>Email</label>
             <input value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
               style={{ width: "100%", padding: "6px" }} />
           </div>
           <div style={{ marginBottom: "8px" }}>
-            <label>Имя</label>
-            <input value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
+            <label>Телефон</label>
+            <input value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
               style={{ width: "100%", padding: "6px" }} />
           </div>
           <div style={{ marginBottom: "8px" }}>
-            <label>Основной адрес доставки</label>
+            <label>Адрес по умолчанию</label>
             <input value={form.address}
               onChange={(e) => setForm({ ...form, address: e.target.value })}
               style={{ width: "100%", padding: "6px" }} />
           </div>
           <div style={{ marginBottom: "8px" }}>
-            <label>Новый пароль (оставьте пустым, чтобы не менять)</label>
+            <label>Новый пароль (пусто — не менять)</label>
             <input type="password" value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
               style={{ width: "100%", padding: "6px" }} />
@@ -88,16 +97,10 @@ export default function Profile() {
           </button>
           {msg && <p style={{ color: "green" }}>{msg}</p>}
         </form>
-
-        {user.coupon_code && (
-          <p style={{ marginTop: "16px" }}>
-            Персональная скидка: <b>{user.coupon_code}</b> (−{user.coupon_discount}%)
-          </p>
-        )}
       </section>
 
       <section>
-        <h2>История заказов</h2>
+        <h2>Мои заказы</h2>
         {oL ? (
           <p>Загрузка...</p>
         ) : oE ? (
@@ -108,13 +111,14 @@ export default function Profile() {
           orders.map((o) => (
             <div key={o.order_id} style={{ border: "1px solid #999", padding: "12px", marginBottom: "12px" }}>
               <h3>Заказ №{o.order_id}</h3>
-              <p>Дата: {new Date(o.created_at).toLocaleDateString()}</p>
+              <p>Дата оформления: {new Date(o.created_at).toLocaleDateString()}</p>
+              <p>Адрес доставки: {o.address}</p>
+              <p>Дата доставки: {new Date(o.delivery_date).toLocaleDateString()}</p>
               <p>Статус: {o.status}</p>
-              <p>Адрес: {o.address || "—"}</p>
               <table border="1" cellPadding="6" style={{ borderCollapse: "collapse", width: "100%" }}>
                 <thead>
                   <tr>
-                    <th>Услуга</th><th>Кол-во</th><th>Цена за ед.</th><th>Сумма</th>
+                    <th>Товар</th><th>Кол-во</th><th>Цена</th><th>Сумма</th>
                   </tr>
                 </thead>
                 <tbody>
