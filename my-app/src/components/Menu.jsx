@@ -1,12 +1,9 @@
 import { NavLink, Link } from "react-router-dom";
-import { useContext } from "react";
 import { useTheme } from "../context/ThemeContext";
-import { CartContext } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 
 function Menu() {
   const { theme, toggleTheme } = useTheme();
-  const { state } = useContext(CartContext);
   const { user, logout } = useAuth();
 
   const isAdmin = user?.role_id === 2;
@@ -35,12 +32,12 @@ function Menu() {
   return (
     <nav style={{ marginBottom: "20px", paddingBottom: "10px", borderBottom: "1px solid #999" }}>
       <NavLink to="/" end style={({ isActive }) => linkStyle(isActive)}>
-        Каталог услуг
+        Каталог
       </NavLink>
 
       {!isAdmin && (
         <>
-          <Link to="/cart" style={plainStyle}>Корзина ({state.items.length})</Link>
+          <Link to="/cart" style={plainStyle}>Корзина</Link>
           <Link to="/profile" style={plainStyle}>Профиль</Link>
         </>
       )}
@@ -56,7 +53,7 @@ function Menu() {
 
       {user && (
         <button onClick={logout} style={buttonStyle}>
-          Выйти ({user.name || user.email})
+          Выйти ({user.full_name || user.email})
         </button>
       )}
 
