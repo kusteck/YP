@@ -17,7 +17,7 @@ export default function ForgotPassword() {
     setErr(""); setMsg(""); setLoading(true);
     try {
       const r = await forgotPassword(email);
-      setMsg(`Код отправлен. Демо-код: ${r.debug_code}`);
+      setMsg(`Код: ${r.debug_code}`);
       setStep(2);
     } catch (e) {
       setErr(e.message);
