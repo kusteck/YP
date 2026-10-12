@@ -26,7 +26,14 @@ const pool = new Pool({
 pool.on("connect", () => console.log("PostgreSQL подключён"));
 pool.on("error", (err) => console.error("PostgreSQL ошибка:", err));
 
-const BAD_WORDS = ["мат", "дурак", "идиот", "тупой", "хрен", "блин", "какашка"];
+const BAD_WORDS = ["мат", "дурак", "идиот", "тупой", "хрен", "блин"];
+
+const NAME_BLACKLIST = [
+  "ааа", "ббб", "ввв", "ггг", "ддд", "еее", "жжж", "ззз", "иии", "ккк",
+  "ллл", "ммм", "ннн", "ооо", "ппп", "ррр", "ссс", "ттт", "ууу", "ффф",
+  "ххх", "ццц", "ччч", "шшш", "щщщ", "ъъъ", "ыыы", "ььь", "эээ", "ююю", "яяя",
+  "test", "тест", "admin", "user", "qwerty", "asdf", "ййй",
+];
 
 function containsBadWords(text) {
   if (!text) return false;
@@ -35,9 +42,25 @@ function containsBadWords(text) {
 }
 
 function validateFullName(name) {
-  if (!name) return false;
-  const re = /^[А-ЯЁA-Z][а-яёa-z\-]+(\s+[А-ЯЁA-Z][а-яёa-z\-]+){1,2}$/;
-  return re.test(name.trim());
+  if (!name || typeof name !== "string") return false;
+
+  const trimmed = name.trim();
+
+  const re = /^[А-ЯЁ][а-яё]+(-[А-ЯЁ][а-яё]+)?\s+[А-ЯЁ][а-яё]+(-[А-ЯЁ][а-яё]+)?(\s+[А-ЯЁ][а-яё]+(-[А-ЯЁ][а-яё]+)?)?$/;
+  if (!re.test(trimmed)) return false;
+
+  const parts = trimmed.toLowerCase().split(/\s+/);
+
+  for (const part of parts) {
+    if (part.length < 2) return false;
+
+    const uniqueLetters = new Set(part.replace(/-/g, "").split(""));
+    if (uniqueLetters.size < 3) return false;
+
+    if (NAME_BLACKLIST.includes(part)) return false;
+  }
+
+  return true;
 }
 
 function validatePhone(phone) {
@@ -226,7 +249,8 @@ app.get("/api/products", async (req, res) => {
     const { search, category_id } = req.query;
     let sql = `
       SELECT p.product_id, p.title, p.description, p.price, p.discount, p.image, p.stock,
-             c.category_id, COALESCE(c.name, 'Без категории') AS category_name
+             COALESCE(c.category_id, 0) AS category_id,
+             COALESCE(c.name, 'Без категории') AS category_name
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.category_id
       WHERE 1=1
@@ -236,7 +260,9 @@ app.get("/api/products", async (req, res) => {
       params.push(`%${search}%`);
       sql += ` AND (p.title ILIKE $${params.length} OR p.description ILIKE $${params.length})`;
     }
-    if (category_id) {
+    if (category_id === "0") {
+      sql += ` AND p.category_id IS NULL`;
+    } else if (category_id) {
       params.push(category_id);
       sql += ` AND p.category_id = $${params.length}`;
     }
@@ -252,7 +278,8 @@ app.get("/api/products/:id", async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT p.product_id, p.title, p.description, p.price, p.discount, p.image, p.stock,
-              c.category_id, COALESCE(c.name, 'Без категории') AS category_name
+              COALESCE(c.category_id, 0) AS category_id,
+              COALESCE(c.name, 'Без категории') AS category_name
        FROM products p
        LEFT JOIN categories c ON p.category_id = c.category_id
        WHERE p.product_id = $1`,
@@ -318,7 +345,14 @@ app.delete("/api/products/:id", authMiddleware, adminMiddleware, async (req, res
 app.get("/api/categories", async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM categories ORDER BY category_id");
-    res.json(result.rows);
+    const list = result.rows.filter((c) => c.name !== "Без категории");
+    const hasNoCategory = result.rows.some((c) => c.name === "Без категории");
+
+    if (hasNoCategory) {
+      list.push({ category_id: 0, name: "Без категории" });
+    }
+
+    res.json(list);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -454,14 +488,38 @@ app.delete("/api/cart/:id", authMiddleware, async (req, res) => {
 
 app.get("/api/delivery-slots", authMiddleware, async (req, res) => {
   try {
-    const result = await pool.query(
+    const existing = await pool.query(
       `SELECT delivery_date, max_orders, current_orders,
               (max_orders - current_orders) AS available
        FROM delivery_slots
        WHERE delivery_date >= CURRENT_DATE
        ORDER BY delivery_date`
     );
-    res.json(result.rows);
+
+    const map = {};
+    for (const row of existing.rows) {
+      const d = new Date(row.delivery_date).toISOString().split("T")[0];
+      map[d] = { ...row, delivery_date: d };
+    }
+
+    const result = [];
+    for (let i = 1; i <= 14; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() + i);
+      const iso = d.toISOString().split("T")[0];
+      if (map[iso]) {
+        result.push(map[iso]);
+      } else {
+        result.push({
+          delivery_date: iso,
+          max_orders: 10,
+          current_orders: 0,
+          available: 10,
+        });
+      }
+    }
+
+    res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -649,6 +707,30 @@ app.delete("/api/orders/:id", authMiddleware, adminMiddleware, async (req, res) 
     }
     await pool.query("DELETE FROM orders WHERE order_id=$1", [req.params.id]);
     res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/api/reviews", authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const { search } = req.query;
+    let sql = `
+      SELECT r.review_id, r.rating, r.comment, r.created_at, r.is_deleted_by_admin,
+             u.full_name AS author, u.email AS author_email,
+             p.title AS product_title, p.product_id
+      FROM reviews r
+      JOIN users u ON r.user_id = u.user_id
+      JOIN products p ON r.product_id = p.product_id
+    `;
+    const params = [];
+    if (search) {
+      params.push(`%${search}%`);
+      sql += ` WHERE r.comment ILIKE $1 OR u.full_name ILIKE $1 OR p.title ILIKE $1`;
+    }
+    sql += " ORDER BY r.created_at DESC";
+    const result = await pool.query(sql, params);
+    res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
