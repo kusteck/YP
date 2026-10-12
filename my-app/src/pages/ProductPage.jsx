@@ -92,16 +92,38 @@ function ProductPage() {
         <p>Только авторизованные могут оставлять отзывы.</p>
       )}
 
-      {rL ? <p>Загрузка отзывов...</p> : rE ? <p style={{ color: "red" }}>{rE}</p> :
-        ((reviews || []).length === 0 ? <p>Отзывов пока нет</p> :
-          (reviews || []).map((r) => (
-            <div key={r.review_id} style={{ border: "1px solid #999", padding: "10px", marginBottom: "8px" }}>
-              <p><b>{r.author}</b> — {r.rating} ★ <small>({new Date(r.created_at).toLocaleDateString()})</small></p>
+      {rL ? (
+        <p>Загрузка отзывов...</p>
+      ) : rE ? (
+        <p style={{ color: "red" }}>{rE}</p>
+      ) : (reviews || []).length === 0 ? (
+        <p>Отзывов пока нет</p>
+      ) : (
+        (reviews || []).map((r) => (
+          <div
+            key={r.review_id}
+            style={{
+              border: "1px solid #999",
+              padding: "10px",
+              marginBottom: "8px",
+              opacity: r.is_deleted_by_admin ? 0.6 : 1,
+              backgroundColor: r.is_deleted_by_admin ? "#f5f5f5" : "transparent",
+            }}
+          >
+            <p>
+              <b>{r.author}</b> — {r.rating} ★{" "}
+              <small>({new Date(r.created_at).toLocaleDateString()})</small>
+            </p>
+            {r.is_deleted_by_admin ? (
+              <p style={{ fontStyle: "italic", color: "#c00" }}>
+                Удалено администратором
+              </p>
+            ) : (
               <p>{r.comment}</p>
-            </div>
-          ))
-        )
-      }
+            )}
+          </div>
+        ))
+      )}
     </div>
   );
 }
