@@ -16,9 +16,23 @@ export default function Register() {
 
   function validate() {
     const e = {};
-    const nameRe = /^[А-ЯЁA-Z][а-яёa-z\-]+(\s+[А-ЯЁA-Z][а-яёa-z\-]+){1,2}$/;
-    if (!full_name.trim()) e.full_name = "Введите ФИО";
-    else if (!nameRe.test(full_name.trim())) e.full_name = "Формат: Иванов Иван Иванович";
+    const nameRe = /^[А-ЯЁ][а-яё]+(-[А-ЯЁ][а-яё]+)?\s+[А-ЯЁ][а-яё]+(-[А-ЯЁ][а-яё]+)?(\s+[А-ЯЁ][а-яё]+(-[А-ЯЁ][а-яё]+)?)?$/;
+    const trimmedName = full_name.trim();
+
+    if (!trimmedName) {
+      e.full_name = "Введите ФИО";
+    } else if (!nameRe.test(trimmedName)) {
+      e.full_name = "Формат: Иванов Иван Иванович";
+    } else {
+      const parts = trimmedName.toLowerCase().split(/\s+/);
+      for (const part of parts) {
+        const uniq = new Set(part.replace(/-/g, "").split(""));
+        if (uniq.size < 3) {
+          e.full_name = "Похоже на рандомный набор букв";
+          break;
+        }
+      }
+    }
 
     if (!email.trim()) e.email = "Введите email";
     else if (!/\S+@\S+\.\S+/.test(email)) e.email = "Некорректный email";
@@ -30,6 +44,7 @@ export default function Register() {
     if (!password) e.password = "Введите пароль";
     else if (password.length < 6) e.password = "Минимум 6 символов";
     if (password !== confirm) e.confirm = "Пароли не совпадают";
+
     return e;
   }
 
