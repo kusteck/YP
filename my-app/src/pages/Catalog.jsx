@@ -31,12 +31,7 @@ function Catalog() {
   }
 
   if (pL || cL) return <p>Загрузка...</p>;
-  if (pE) return (
-    <div style={{ padding: "20px", border: "2px solid red", color: "red" }}>
-      <h2>⚠ Технические работы</h2>
-      <p>Сервер недоступен. Попробуйте позже.</p>
-    </div>
-  );
+  if (pE) return <p style={{ color: "red" }}>Ошибка: {pE}</p>;
 
   const safeProducts = products || [];
   const safeCategories = categories || [];
