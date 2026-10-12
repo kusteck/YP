@@ -3,6 +3,7 @@ import { useApi } from "../hooks/useApi";
 import { getMyOrders } from "../api/orders";
 import { updateProfile } from "../api/auth";
 import { useAuth } from "../context/AuthContext";
+import { getStatusLabel, getStatusColor } from "../utils/statuses";
 
 export default function Profile() {
   const { user, refresh } = useAuth();
@@ -34,6 +35,26 @@ export default function Profile() {
     e.preventDefault();
     setSaving(true);
     setMsg("");
+
+    const nameRe = /^[А-ЯЁ][а-яё]+(-[А-ЯЁ][а-яё]+)?\s+[А-ЯЁ][а-яё]+(-[А-ЯЁ][а-яё]+)?(\s+[А-ЯЁ][а-яё]+(-[А-ЯЁ][а-яё]+)?)?$/;
+    const trimmedName = form.full_name.trim();
+
+    if (!nameRe.test(trimmedName)) {
+      setMsg("Ошибка: Формат ФИО — Иванов Иван Иванович");
+      setSaving(false);
+      return;
+    }
+
+    const parts = trimmedName.toLowerCase().split(/\s+/);
+    for (const part of parts) {
+      const uniq = new Set(part.replace(/-/g, "").split(""));
+      if (uniq.size < 3) {
+        setMsg("Ошибка: Похоже на рандомный набор букв");
+        setSaving(false);
+        return;
+      }
+    }
+
     try {
       const payload = {
         full_name: form.full_name,
@@ -95,7 +116,7 @@ export default function Profile() {
           <button type="submit" disabled={saving}>
             {saving ? "Сохранение..." : "Сохранить"}
           </button>
-          {msg && <p style={{ color: "green" }}>{msg}</p>}
+          {msg && <p style={{ color: msg.startsWith("Ошибка") ? "red" : "green" }}>{msg}</p>}
         </form>
       </section>
 
@@ -114,7 +135,12 @@ export default function Profile() {
               <p>Дата оформления: {new Date(o.created_at).toLocaleDateString()}</p>
               <p>Адрес доставки: {o.address}</p>
               <p>Дата доставки: {new Date(o.delivery_date).toLocaleDateString()}</p>
-              <p>Статус: {o.status}</p>
+              <p>
+                Статус:{" "}
+                <b style={{ color: getStatusColor(o.status) }}>
+                  {getStatusLabel(o.status)}
+                </b>
+              </p>
               <table border="1" cellPadding="6" style={{ borderCollapse: "collapse", width: "100%" }}>
                 <thead>
                   <tr>
