@@ -1,7 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate, Link } from "react-router-dom";
-import { ThemeProvider } from "./context/ThemeContext";
+import { ThemeProvider, useTheme } from "./context/ThemeContext";
 import { CartProvider } from "./context/CartContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { useBackendStatus } from "./hooks/useBackendStatus";
+import Maintenance from "./components/Maintenance";
 import Menu from "./components/Menu";
 import Catalog from "./pages/Catalog";
 import ProductPage from "./pages/ProductPage";
@@ -47,15 +49,39 @@ function AppRoutes() {
   );
 }
 
+function AppContent() {
+  const { theme, toggleTheme } = useTheme();
+  const { available, checking } = useBackendStatus();
+
+  const appStyles = {
+    backgroundColor: theme === "dark" ? "#222" : "#fff",
+    color: theme === "dark" ? "#eee" : "#000",
+    minHeight: "100vh",
+    padding: "20px",
+  };
+
+  return (
+    <div style={appStyles}>
+      <BrowserRouter>
+        <Menu />
+        {checking ? (
+          <p style={{ textAlign: "center", color: "#888" }}>Проверка соединения...</p>
+        ) : available === false ? (
+          <Maintenance />
+        ) : (
+          <AppRoutes />
+        )}
+      </BrowserRouter>
+    </div>
+  );
+}
+
 function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
         <CartProvider>
-          <BrowserRouter>
-            <Menu />
-            <AppRoutes />
-          </BrowserRouter>
+          <AppContent />
         </CartProvider>
       </AuthProvider>
     </ThemeProvider>
