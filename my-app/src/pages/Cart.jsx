@@ -78,13 +78,7 @@ export default function Cart() {
   }
 
   if (loading) return <p>Загрузка корзины...</p>;
-  if (error) return (
-    <div style={{ padding: "20px", border: "2px solid red", color: "red" }}>
-      <h2>⚠ Технические работы</h2>
-      <p>{error}</p>
-      <button onClick={loadAll}>Повторить</button>
-    </div>
-  );
+  if (error) return <p style={{ color: "red" }}>Ошибка: {error}</p>;
   if (safeItems.length === 0) return <h2>Корзина пуста</h2>;
 
   return (
